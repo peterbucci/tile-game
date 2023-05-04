@@ -12,10 +12,15 @@ interface GameProps {
 const Game: React.FC<GameProps> = ({ backgroundColor }) => {
   const gameRef = React.useRef<HTMLDivElement>(null);
   const gameInstance = React.useRef<Phaser.Game | null>(null);
-  const tilesheets = useSelector((state: AppState) => state.tilesheets);
-  const selectedTilesheet = useSelector(
-    (state: AppState) => state.selectedTilesheet
-  );
+  const state = useSelector((state: AppState) => state);
+  const {
+    tilesheets,
+    selectedTilesheet,
+    tileSize,
+    tilesheetWidth,
+    activeLayer,
+    layers,
+  } = state;
 
   const resizeGame = () => {
     if (!gameInstance.current) return;
@@ -53,6 +58,11 @@ const Game: React.FC<GameProps> = ({ backgroundColor }) => {
         preBoot: (game: Phaser.Game) => {
           game.registry.set("tilesheets", tilesheets);
           game.registry.set("selectedTilesheet", selectedTilesheet);
+          game.registry.set("tileSize", tileSize);
+          game.registry.set("tilesheetWidth", tilesheetWidth);
+          game.registry.set("layers", layers);
+          game.registry.set("activeLayer", activeLayer);
+          game.registry.set("eventEmitter", new Phaser.Events.EventEmitter());
         },
       },
     };

@@ -10,6 +10,15 @@ const initialState: AppState = {
     },
   ],
   selectedTilesheet: 0,
+  tileSize: 48,
+  tilesheetWidth: 5,
+  layers: [
+    {
+      id: 1,
+      name: "Layer 1",
+    },
+  ],
+  activeLayer: 0,
 };
 
 const rootReducer = (state = initialState, action: any): AppState => {
