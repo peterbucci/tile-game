@@ -1,5 +1,9 @@
 import React, { useEffect } from "react";
 import Phaser from "phaser";
+import MenuScene from "../scenes/MenuScene";
+import GridScene from "../scenes/GridScene";
+import { useSelector } from "react-redux";
+import AppState from "../store/types";
 
 interface GameProps {
   backgroundColor: string;
@@ -8,6 +12,10 @@ interface GameProps {
 const Game: React.FC<GameProps> = ({ backgroundColor }) => {
   const gameRef = React.useRef<HTMLDivElement>(null);
   const gameInstance = React.useRef<Phaser.Game | null>(null);
+  const tilesheets = useSelector((state: AppState) => state.tilesheets);
+  const selectedTilesheet = useSelector(
+    (state: AppState) => state.selectedTilesheet
+  );
 
   const resizeGame = () => {
     if (!gameInstance.current) return;
@@ -16,6 +24,13 @@ const Game: React.FC<GameProps> = ({ backgroundColor }) => {
     const height = window.innerHeight;
 
     gameInstance.current.scale.resize(width, height);
+    gameInstance.current.renderer.resize(width, height); // Add this line
+
+    gameInstance.current.scene.scenes.forEach((scene) => {
+      if (scene instanceof GridScene) {
+        scene.resize(width, height);
+      }
+    });
   };
 
   useEffect(() => {
@@ -27,9 +42,23 @@ const Game: React.FC<GameProps> = ({ backgroundColor }) => {
       height: window.innerHeight,
       backgroundColor,
       parent: gameRef.current,
+      scene: [GridScene, MenuScene],
+      render: {
+        pixelArt: true, // Add this line
+      },
+      scale: {
+        mode: Phaser.Scale.NONE, // Change from Phaser.Scale.RESIZE to Phaser.Scale.NONE
+      },
+      callbacks: {
+        preBoot: (game: Phaser.Game) => {
+          game.registry.set("tilesheets", tilesheets);
+          game.registry.set("selectedTilesheet", selectedTilesheet);
+        },
+      },
     };
 
     gameInstance.current = new Phaser.Game(config);
+    gameInstance.current.scene.start("MenuScene");
 
     window.addEventListener("resize", resizeGame);
 
