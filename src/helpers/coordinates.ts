@@ -4,6 +4,5 @@ export function getCoordinatesFromPointer(
 ) {
   const x = Math.floor(pointer.x / tileSize) * tileSize;
   const y = Math.floor(pointer.y / tileSize) * tileSize;
-  console.log(x, y);
   return { x, y };
 }

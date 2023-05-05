@@ -1,4 +1,6 @@
 import Phaser from "phaser";
+import { getCoordinatesFromPointer } from "../helpers/coordinates";
+import MenuScene from "./MenuScene";
 
 export default class GridScene extends Phaser.Scene {
   private gridSize = 48;
@@ -13,6 +15,7 @@ export default class GridScene extends Phaser.Scene {
     const { width, height } = this.scale;
     // Draw grid container
     const gridContainer = this.add.container(0, 0).setDepth(0);
+
     this.layers.push(gridContainer);
     // Draw grid
     const columns = Math.ceil(width / this.gridSize);
@@ -25,6 +28,8 @@ export default class GridScene extends Phaser.Scene {
       layerContainer.setDepth(layerData.id);
       this.layers.push(layerContainer);
     });
+    // Listen for pointer events
+    this.input.on("pointerdown", this.handleGridClick, this);
     // Listen for layer updates
     const eventEmitter = this.registry.get("eventEmitter");
     eventEmitter.on("updateLayers", this.updateLayers, this);
@@ -82,5 +87,32 @@ export default class GridScene extends Phaser.Scene {
         child.destroy();
       }
     });
+  }
+
+  handleGridClick(pointer: Phaser.Input.Pointer) {
+    const { x, y } = getCoordinatesFromPointer(pointer, this.gridSize);
+
+    const menuScene = this.scene.get("MenuScene") as MenuScene;
+    const selectedTile = menuScene.getSelectedTile();
+    const selectedLayerIndex = menuScene.getActiveLayerIndex();
+
+    if (selectedTile && selectedTile.texture) {
+      const tile = this.add
+        .image(
+          x - (selectedTile.x ?? 0),
+          y - (selectedTile.y ?? 0),
+          selectedTile.texture.key
+        )
+        .setCrop(
+          selectedTile.x,
+          selectedTile.y,
+          selectedTile.width,
+          selectedTile.height
+        )
+        .setOrigin(0)
+        .setDepth(selectedLayerIndex + 1);
+
+      this.layers[selectedLayerIndex + 1].add(tile);
+    }
   }
 }

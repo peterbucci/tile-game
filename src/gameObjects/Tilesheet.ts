@@ -107,4 +107,22 @@ export default class Tilesheet extends Phaser.GameObjects.Image {
       this.thisHighlightHover.setPosition(x, y);
     }
   }
+
+  getSelectedTile(): {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    texture: { key: string };
+  } | null {
+    if (!this.thisHighlightClick) return null;
+
+    return {
+      x: this.thisHighlightClick.x,
+      y: this.thisHighlightClick.y,
+      width: this.thisHighlightClick.width,
+      height: this.thisHighlightClick.height,
+      texture: this.texture,
+    };
+  }
 }

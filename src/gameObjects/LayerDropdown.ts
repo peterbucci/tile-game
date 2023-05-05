@@ -151,4 +151,8 @@ export default class LayerDropdown extends Phaser.GameObjects.Container {
     const layers = this.scene.registry.get("layers");
     this.selectLayerInDropdown(layers[index].id);
   }
+
+  getActiveLayerIndex() {
+    return this.scene.registry.get("activeLayer");
+  }
 }

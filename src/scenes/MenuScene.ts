@@ -10,7 +10,7 @@ export default class MenuScene extends Phaser.Scene {
   private tileSize!: number;
   private tilesheetData!: { name: string; filename: string };
   private sidebarWidth!: number;
-  private tilesheet?: Phaser.GameObjects.Image;
+  private tilesheet?: Tilesheet;
   private layerDropdown!: LayerDropdown;
 
   constructor() {
@@ -101,5 +101,19 @@ export default class MenuScene extends Phaser.Scene {
 
   resize() {
     this.resizeSidebar();
+  }
+
+  getSelectedTile() {
+    if (this.tilesheet) {
+      const tileData = this.tilesheet.getSelectedTile();
+      return {
+        ...tileData,
+      };
+    }
+    return null;
+  }
+
+  getActiveLayerIndex() {
+    return this.layerDropdown.getActiveLayerIndex();
   }
 }
