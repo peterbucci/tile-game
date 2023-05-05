@@ -8,6 +8,7 @@ export default class Tilesheet extends Phaser.GameObjects.Image {
   private tileSize: number;
   private thisHighlightClick!: Phaser.GameObjects.Rectangle;
   private thisHighlightHover!: Phaser.GameObjects.Rectangle;
+  private selectedTilePosition?: Phaser.Geom.Point;
 
   constructor(
     sidebarContainer: Phaser.GameObjects.Container,
@@ -54,15 +55,41 @@ export default class Tilesheet extends Phaser.GameObjects.Image {
   }
 
   drawHighlightClickRectangle(pointer: Phaser.Input.Pointer) {
-    const { x, y } = getCoordinatesFromPointer(pointer, this.tileSize);
-    if (!this.thisHighlightClick) {
-      this.thisHighlightClick = this.scene.add
-        .rectangle(x, y, this.tileSize, this.tileSize)
-        .setStrokeStyle(2, 0xff0000);
-      this.sidebarContainer.add(this.thisHighlightClick);
+    if (pointer.event.shiftKey && this.selectedTilePosition) {
+      const { x, y } = getCoordinatesFromPointer(pointer, this.tileSize);
+      this.selectTilesInRange(
+        this.selectedTilePosition,
+        new Phaser.Geom.Point(x, y)
+      );
     } else {
-      this.thisHighlightClick.setPosition(x, y);
+      const { x, y } = getCoordinatesFromPointer(pointer, this.tileSize);
+      this.selectedTilePosition = new Phaser.Geom.Point(x, y);
+
+      if (!this.thisHighlightClick) {
+        this.thisHighlightClick = this.scene.add
+          .rectangle(x, y, this.tileSize, this.tileSize)
+          .setFillStyle(0xff0000, 0.5)
+          .setOrigin(0);
+        this.sidebarContainer.add(this.thisHighlightClick);
+      } else {
+        this.thisHighlightClick.setPosition(x, y);
+        this.thisHighlightClick.setSize(this.tileSize, this.tileSize);
+      }
     }
+  }
+
+  selectTilesInRange(startTile: Phaser.Geom.Point, endTile: Phaser.Geom.Point) {
+    const startX = Math.min(startTile.x, endTile.x);
+    const endX = Math.max(startTile.x, endTile.x);
+    const startY = Math.min(startTile.y, endTile.y);
+    const endY = Math.max(startTile.y, endTile.y);
+
+    const width = endX - startX + this.tileSize;
+    const height = endY - startY + this.tileSize;
+    // console.log(startX, startY, width, height);
+
+    this.thisHighlightClick.setPosition(startX, startY);
+    this.thisHighlightClick.setSize(width, height);
   }
 
   drawHighlightHoverRectangle(pointer: Phaser.Input.Pointer) {
@@ -71,7 +98,9 @@ export default class Tilesheet extends Phaser.GameObjects.Image {
     if (!this.thisHighlightHover) {
       this.thisHighlightHover = this.scene.add
         .rectangle(x, y, this.tileSize, this.tileSize)
-        .setFillStyle(0xff0000, 0.5);
+        .setStrokeStyle(2, 0xff0000)
+        .setOrigin(0);
+
       this.sidebarContainer.add(this.thisHighlightHover);
     } else {
       this.thisHighlightHover.visible = true;
