@@ -32,9 +32,8 @@ const Game: React.FC<GameProps> = ({ backgroundColor }) => {
     gameInstance.current.renderer.resize(width, height); // Add this line
 
     gameInstance.current.scene.scenes.forEach((scene) => {
-      if (scene instanceof GridScene) {
-        scene.resize(width, height);
-      }
+      if (scene instanceof GridScene) scene.resize();
+      if (scene instanceof MenuScene) scene.resize();
     });
   };
 
@@ -50,6 +49,9 @@ const Game: React.FC<GameProps> = ({ backgroundColor }) => {
       scene: [GridScene, MenuScene],
       render: {
         pixelArt: true, // Add this line
+      },
+      dom: {
+        createContainer: true,
       },
       scale: {
         mode: Phaser.Scale.NONE, // Change from Phaser.Scale.RESIZE to Phaser.Scale.NONE
