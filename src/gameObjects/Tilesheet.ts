@@ -50,10 +50,6 @@ export default class Tilesheet extends Phaser.GameObjects.Image {
     });
   }
 
-  updateCrop() {
-    this.setCrop(0, 0, this.sidebarWidth, this.sidebarHeight);
-  }
-
   drawHighlightClickRectangle(pointer: Phaser.Input.Pointer) {
     if (pointer.event.shiftKey && this.selectedTilePosition) {
       const { x, y } = getCoordinatesFromPointer(pointer, this.tileSize);
@@ -86,7 +82,6 @@ export default class Tilesheet extends Phaser.GameObjects.Image {
 
     const width = endX - startX + this.tileSize;
     const height = endY - startY + this.tileSize;
-    // console.log(startX, startY, width, height);
 
     this.thisHighlightClick.setPosition(startX, startY);
     this.thisHighlightClick.setSize(width, height);

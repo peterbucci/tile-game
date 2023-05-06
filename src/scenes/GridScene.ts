@@ -35,11 +35,8 @@ export default class GridScene extends Phaser.Scene {
 
   createLayers() {
     const layersData = this.registry.get("layers");
-    layersData.forEach((layerData: { id: number; name: string }) => {
-      const layerContainer = this.createLayerContainer(
-        layerData.id,
-        layerData.name
-      );
+    layersData.forEach((layerData: { id: string; name: string }, i: any) => {
+      const layerContainer = this.createLayerContainer(i, layerData.id);
       this.layers.push(layerContainer);
     });
   }
@@ -66,10 +63,14 @@ export default class GridScene extends Phaser.Scene {
     this.input.on(
       "pointerdown",
       (pointer: Phaser.Input.Pointer) => {
-        const activeLayer = this.registry.get("activeLayer") + 1;
-        const container = this.layers[activeLayer];
-        const depth = activeLayer;
-        this.drawTiles(pointer, container, depth);
+        const activeLayer = this.registry.get("activeLayer");
+        const container = this.layers.find((layer) => {
+          return layer.name === activeLayer;
+        });
+        if (container) {
+          const depth = container.depth;
+          this.drawTiles(pointer, container, depth);
+        }
       },
       this
     );
@@ -80,21 +81,23 @@ export default class GridScene extends Phaser.Scene {
     eventEmitter.on("updateLayers", this.updateLayers, this);
   }
 
-  updateLayers(_: any, key: string, data: { id: number; name: string }) {
+  updateLayers(_: any, key: string, data: { id: string; name: string }) {
     if (key === "add") {
       // Draw layers
       const layerContainer = this.add.container(0, 0);
-      layerContainer.name = data.name;
-      layerContainer.setDepth(data.id);
+      layerContainer.name = data.id;
+      layerContainer.setDepth(this.layers.length);
       this.layers.push(layerContainer);
     } else if (key === "remove") {
       // Remove layer
       const activeLayer = this.registry.get("activeLayer");
-      const removedLayer = this.layers.splice(activeLayer + 1, 1);
-      removedLayer[0].destroy();
-      const tiles = this.registry.get("placedTiles");
+      this.layers = this.layers.filter((layer) => {
+        if (layer.name === activeLayer) layer.destroy();
+        return layer.name !== activeLayer;
+      });
+      const tiles = this.registry.get("placedTiles") ?? [];
       const updatedTiles = tiles.filter((tile: any) => {
-        return tile.layer !== activeLayer + 1;
+        return tile.layer !== activeLayer;
       });
       this.registry.set("placedTiles", updatedTiles);
     }
@@ -127,9 +130,12 @@ export default class GridScene extends Phaser.Scene {
     const rows = Math.ceil(height / this.gridSize);
     this.drawGrid(columns, rows);
     // Draw placed tiles
-    const tiles = this.registry.get("placedTiles");
+    const tiles = this.registry.get("placedTiles") ?? [];
     tiles.forEach((tile: any) => {
-      this.drawTile(tile, this.layers[tile.layer]);
+      this.drawTile(
+        tile,
+        this.layers.find((layer) => layer.name === tile.layer)
+      );
     });
   }
 
@@ -148,17 +154,17 @@ export default class GridScene extends Phaser.Scene {
       width: number;
       height: number;
       tilesheet: any;
-      layer: number;
+      depth: number;
     },
     container: any
   ) {
-    const { gridX, gridY, sourceX, sourceY, width, height, tilesheet, layer } =
+    const { gridX, gridY, sourceX, sourceY, width, height, tilesheet, depth } =
       tile;
     const tileToAdd = this.add
       .image(gridX, gridY, tilesheet)
       .setCrop(sourceX, sourceY, width, height)
       .setOrigin(0)
-      .setDepth(layer);
+      .setDepth(depth);
     container.add(tileToAdd);
     return tileToAdd;
   }
@@ -183,7 +189,7 @@ export default class GridScene extends Phaser.Scene {
               width: selectedTile.width,
               height: selectedTile.height,
               tilesheet: selectedTile.texture.key,
-              layer: depth,
+              depth,
             },
             container
           );
@@ -198,7 +204,8 @@ export default class GridScene extends Phaser.Scene {
               width: selectedTile.width,
               height: selectedTile.height,
               tilesheet: selectedTile.texture.key,
-              layer: depth,
+              layer: container.name,
+              depth,
             };
             const placedTiles = this.registry.get("placedTiles") || [];
             placedTiles.push(tileData);

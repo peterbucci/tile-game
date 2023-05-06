@@ -37,7 +37,7 @@ export default class LayerDropdown extends Phaser.GameObjects.Container {
 
     this.domElement.addListener("change");
     this.domElement.on("change", (event: any) => {
-      const selectedLayerIndex = parseInt(event.target.value);
+      const selectedLayerIndex = event.target.value;
       this.setActiveLayer(selectedLayerIndex);
     });
   }
@@ -76,24 +76,24 @@ export default class LayerDropdown extends Phaser.GameObjects.Container {
   }
 
   private generateLayerDropdownHTML(
-    layers: { id: number; name: string }[]
+    layers: { id: string; name: string }[]
   ): string {
     return `
     <select id="layer-dropdown" class="layer-dropdown">
       ${layers
-        .map((layer, i) => `<option value="${i}">${layer.name}</option>`)
+        .map((layer) => `<option value="${layer.id}">${layer.name}</option>`)
         .join("")}
     </select>
   `;
   }
 
-  private selectLayerInDropdown(index: number) {
+  private selectLayerInDropdown(id: string) {
     const layerDropdownElement = this.domElement.getChildByID(
       "layer-dropdown"
     ) as HTMLSelectElement;
 
     if (layerDropdownElement) {
-      layerDropdownElement.value = index.toString();
+      layerDropdownElement.value = id;
     }
   }
 
@@ -117,13 +117,16 @@ export default class LayerDropdown extends Phaser.GameObjects.Container {
         this.generateLayerDropdownHTML(updatedLayers);
     }
     // Set the new layer as the active layer
-    this.setActiveLayer(updatedLayers.length - 1);
+    this.setActiveLayer(updatedLayers[updatedLayers.length - 1].id);
   }
 
   private deleteLayer() {
     // Get the layer to delete
     const layers = this.scene.registry.get("layers");
     const activeLayer = this.scene.registry.get("activeLayer");
+    const activeLayerIndex = layers.findIndex(
+      (layer: { id: string }) => layer.id === activeLayer
+    );
     if (layers.length === 1) return;
     // Delete the layer
     const updatedLayers = deleteLayer(layers, activeLayer);
@@ -138,13 +141,14 @@ export default class LayerDropdown extends Phaser.GameObjects.Container {
         this.generateLayerDropdownHTML(updatedLayers);
     }
     // Set the new layer as the active layer
-    const newIndex = activeLayer === 0 ? 0 : activeLayer - 1;
-    this.setActiveLayer(newIndex);
+    const newIndex = activeLayerIndex === 0 ? 0 : activeLayerIndex - 1;
+    const newActiveLayer = updatedLayers[newIndex].id;
+    this.setActiveLayer(newActiveLayer);
   }
 
-  private setActiveLayer(index: number) {
-    this.scene.registry.set("activeLayer", index);
-    this.selectLayerInDropdown(index);
+  private setActiveLayer(id: string) {
+    this.scene.registry.set("activeLayer", id);
+    this.selectLayerInDropdown(id);
   }
 
   getActiveLayerIndex() {

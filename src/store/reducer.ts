@@ -14,11 +14,11 @@ const initialState: AppState = {
   tilesheetWidth: 5,
   layers: [
     {
-      id: 1,
+      id: "1",
       name: "Layer 1",
     },
   ],
-  activeLayer: 0,
+  activeLayer: "1",
 };
 
 const rootReducer = (state = initialState, action: any): AppState => {

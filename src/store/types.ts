@@ -5,7 +5,7 @@ interface TileSheet {
 }
 
 export interface Layer {
-  id: number;
+  id: string;
   name: string;
 }
 
@@ -15,5 +15,5 @@ export default interface AppState {
   tileSize: number;
   tilesheetWidth: number;
   layers: Layer[];
-  activeLayer: number;
+  activeLayer: string;
 }
