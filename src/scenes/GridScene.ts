@@ -12,7 +12,7 @@ export default class GridScene extends Phaser.Scene {
   }
 
   create() {
-    this.clearGrid();
+    this.clearLayers();
     this.createGridContainer();
     this.createGrid();
     this.createLayers();
@@ -55,15 +55,10 @@ export default class GridScene extends Phaser.Scene {
   }
 
   initializeHoverTile() {
-    const hoverContainer = this.createLayerContainer(this.layers.length + 1);
+    const hoverContainer = this.createLayerContainer(1000);
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
       hoverContainer.removeAll(true);
-      const tiles = this.drawTiles(
-        pointer,
-        hoverContainer,
-        hoverContainer.depth
-      );
-      // if (tiles) tiles.forEach((tile: { alpha: number }) => (tile.alpha = 0.5));
+      this.drawTiles(pointer, hoverContainer, hoverContainer.depth);
     });
   }
 
@@ -71,9 +66,9 @@ export default class GridScene extends Phaser.Scene {
     this.input.on(
       "pointerdown",
       (pointer: Phaser.Input.Pointer) => {
-        const activeLayer = this.registry.get("activeLayer");
+        const activeLayer = this.registry.get("activeLayer") + 1;
         const container = this.layers[activeLayer];
-        const depth = activeLayer + 1;
+        const depth = activeLayer;
         this.drawTiles(pointer, container, depth);
       },
       this
@@ -94,12 +89,14 @@ export default class GridScene extends Phaser.Scene {
       this.layers.push(layerContainer);
     } else if (key === "remove") {
       // Remove layer
-      this.layers = this.layers.filter((layer: any) => {
-        if (layer.name === data.name) {
-          layer.destroy();
-        }
-        return layer.name !== data.name;
+      const activeLayer = this.registry.get("activeLayer");
+      const removedLayer = this.layers.splice(activeLayer + 1, 1);
+      removedLayer[0].destroy();
+      const tiles = this.registry.get("placedTiles");
+      const updatedTiles = tiles.filter((tile: any) => {
+        return tile.layer !== activeLayer + 1;
       });
+      this.registry.set("placedTiles", updatedTiles);
     }
   }
 
@@ -123,18 +120,47 @@ export default class GridScene extends Phaser.Scene {
 
   resize() {
     const { width, height } = this.scale;
-    // Clear grid
-    this.clearGrid();
+    // Clear layers
+    this.clearLayers();
     // Draw grid
     const columns = Math.ceil(width / this.gridSize);
     const rows = Math.ceil(height / this.gridSize);
     this.drawGrid(columns, rows);
+    // Draw placed tiles
+    const tiles = this.registry.get("placedTiles");
+    tiles.forEach((tile: any) => {
+      this.drawTile(tile, this.layers[tile.layer]);
+    });
   }
 
-  clearGrid() {
+  clearLayers() {
     this.layers.forEach((layer: any) => {
       layer.removeAll(true);
     });
+  }
+
+  drawTile(
+    tile: {
+      gridX: number;
+      gridY: number;
+      sourceX: number;
+      sourceY: number;
+      width: number;
+      height: number;
+      tilesheet: any;
+      layer: number;
+    },
+    container: any
+  ) {
+    const { gridX, gridY, sourceX, sourceY, width, height, tilesheet, layer } =
+      tile;
+    const tileToAdd = this.add
+      .image(gridX, gridY, tilesheet)
+      .setCrop(sourceX, sourceY, width, height)
+      .setOrigin(0)
+      .setDepth(layer);
+    container.add(tileToAdd);
+    return tileToAdd;
   }
 
   drawTiles(pointer: Phaser.Input.Pointer, container: any, depth: number) {
@@ -148,17 +174,20 @@ export default class GridScene extends Phaser.Scene {
           const gridCoords = getCoordinatesFromPointer(pointer, this.gridSize);
           const x = gridCoords.x - menuScene.tilesheet.thisHighlightClick.x;
           const y = gridCoords.y - menuScene.tilesheet.thisHighlightClick.y;
+          const tile = this.drawTile(
+            {
+              gridX: x,
+              gridY: y,
+              sourceX: selectedTile.x,
+              sourceY: selectedTile.y,
+              width: selectedTile.width,
+              height: selectedTile.height,
+              tilesheet: selectedTile.texture.key,
+              layer: depth,
+            },
+            container
+          );
 
-          const tile = this.add
-            .image(x, y, selectedTile.texture.key)
-            .setCrop(
-              selectedTile.x,
-              selectedTile.y,
-              selectedTile.width,
-              selectedTile.height
-            )
-            .setOrigin(0)
-            .setDepth(depth);
           if (pointerEvent === "mousedown") {
             // Add the tile object to an array in the registry
             const tileData = {
@@ -166,14 +195,17 @@ export default class GridScene extends Phaser.Scene {
               gridY: y,
               sourceX: selectedTile.x,
               sourceY: selectedTile.y,
+              width: selectedTile.width,
+              height: selectedTile.height,
               tilesheet: selectedTile.texture.key,
               layer: depth,
             };
             const placedTiles = this.registry.get("placedTiles") || [];
             placedTiles.push(tileData);
             this.registry.set("placedTiles", placedTiles);
+          } else {
+            tile.alpha = 0.5;
           }
-          container.add(tile);
         }
       }
     }

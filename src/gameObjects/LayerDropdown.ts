@@ -37,12 +37,8 @@ export default class LayerDropdown extends Phaser.GameObjects.Container {
 
     this.domElement.addListener("change");
     this.domElement.on("change", (event: any) => {
-      const selectedLayerId = parseInt(event.target.value);
-      const layers = this.scene.registry.get("layers");
-      const newIndex = layers.findIndex(
-        (layer: { id: number }) => layer.id === selectedLayerId
-      );
-      this.setActiveLayer(newIndex);
+      const selectedLayerIndex = parseInt(event.target.value);
+      this.setActiveLayer(selectedLayerIndex);
     });
   }
 
@@ -85,26 +81,26 @@ export default class LayerDropdown extends Phaser.GameObjects.Container {
     return `
     <select id="layer-dropdown" class="layer-dropdown">
       ${layers
-        .map((layer) => `<option value="${layer.id}">${layer.name}</option>`)
+        .map((layer, i) => `<option value="${i}">${layer.name}</option>`)
         .join("")}
     </select>
   `;
   }
 
-  private selectLayerInDropdown(layerId: number) {
+  private selectLayerInDropdown(index: number) {
     const layerDropdownElement = this.domElement.getChildByID(
       "layer-dropdown"
     ) as HTMLSelectElement;
 
     if (layerDropdownElement) {
-      layerDropdownElement.value = layerId.toString();
+      layerDropdownElement.value = index.toString();
     }
   }
 
   private createLayer() {
     // Create a new layer
     const layers = this.scene.registry.get("layers");
-    const updatedLayers = createLayer(layers); // You need to import the `createLayer` function from "../helpers/layerHelpers"
+    const updatedLayers = createLayer(layers);
     this.scene.registry.set("layers", updatedLayers);
     // Emit an event to update the layers in the editor
     const eventEmitter = this.scene.registry.get("eventEmitter");
@@ -128,14 +124,13 @@ export default class LayerDropdown extends Phaser.GameObjects.Container {
     // Get the layer to delete
     const layers = this.scene.registry.get("layers");
     const activeLayer = this.scene.registry.get("activeLayer");
-    const layerToDelete = layers[activeLayer];
     if (layers.length === 1) return;
     // Delete the layer
     const updatedLayers = deleteLayer(layers, activeLayer);
     this.scene.registry.set("layers", updatedLayers);
     // Emit an event to update the layers in the editor
     const eventEmitter = this.scene.registry.get("eventEmitter");
-    eventEmitter.emit("updateLayers", this.scene, "remove", layerToDelete);
+    eventEmitter.emit("updateLayers", this.scene, "remove");
     // Update the layer dropdown
     const layerDropdownElement = this.domElement.getChildByID("layer-dropdown");
     if (layerDropdownElement) {
@@ -149,8 +144,7 @@ export default class LayerDropdown extends Phaser.GameObjects.Container {
 
   private setActiveLayer(index: number) {
     this.scene.registry.set("activeLayer", index);
-    const layers = this.scene.registry.get("layers");
-    this.selectLayerInDropdown(layers[index].id);
+    this.selectLayerInDropdown(index);
   }
 
   getActiveLayerIndex() {
