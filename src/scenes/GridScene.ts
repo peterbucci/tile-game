@@ -58,8 +58,12 @@ export default class GridScene extends Phaser.Scene {
     const hoverContainer = this.createLayerContainer(this.layers.length + 1);
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
       hoverContainer.removeAll(true);
-      const tile = this.drawTile(pointer, hoverContainer, hoverContainer.depth);
-      if (tile) tile.alpha = 0.5;
+      const tiles = this.drawTiles(
+        pointer,
+        hoverContainer,
+        hoverContainer.depth
+      );
+      // if (tiles) tiles.forEach((tile: { alpha: number }) => (tile.alpha = 0.5));
     });
   }
 
@@ -70,7 +74,7 @@ export default class GridScene extends Phaser.Scene {
         const activeLayer = this.registry.get("activeLayer");
         const container = this.layers[activeLayer];
         const depth = activeLayer + 1;
-        this.drawTile(pointer, container, depth);
+        this.drawTiles(pointer, container, depth);
       },
       this
     );
@@ -133,30 +137,45 @@ export default class GridScene extends Phaser.Scene {
     });
   }
 
-  drawTile(pointer: Phaser.Input.Pointer, container: any, depth: number) {
-    const { x, y } = getCoordinatesFromPointer(pointer, this.gridSize);
-
+  drawTiles(pointer: Phaser.Input.Pointer, container: any, depth: number) {
     const menuScene = this.scene.get("MenuScene") as MenuScene;
-    const selectedTile = menuScene.getSelectedTile();
+    const selectedTiles = menuScene.getSelectedTiles();
+    const pointerEvent = pointer.event.type;
 
-    if (selectedTile && selectedTile.texture) {
-      const tile = this.add
-        .image(
-          x - (selectedTile.x ?? 0),
-          y - (selectedTile.y ?? 0),
-          selectedTile.texture.key
-        )
-        .setCrop(
-          selectedTile.x,
-          selectedTile.y,
-          selectedTile.width,
-          selectedTile.height
-        )
-        .setOrigin(0)
-        .setDepth(depth);
+    if (selectedTiles) {
+      for (const selectedTile of selectedTiles) {
+        if (selectedTile && selectedTile.texture && menuScene.tilesheet) {
+          const gridCoords = getCoordinatesFromPointer(pointer, this.gridSize);
+          const x = gridCoords.x - menuScene.tilesheet.thisHighlightClick.x;
+          const y = gridCoords.y - menuScene.tilesheet.thisHighlightClick.y;
 
-      container.add(tile);
-      return tile;
+          const tile = this.add
+            .image(x, y, selectedTile.texture.key)
+            .setCrop(
+              selectedTile.x,
+              selectedTile.y,
+              selectedTile.width,
+              selectedTile.height
+            )
+            .setOrigin(0)
+            .setDepth(depth);
+          if (pointerEvent === "mousedown") {
+            // Add the tile object to an array in the registry
+            const tileData = {
+              gridX: x,
+              gridY: y,
+              sourceX: selectedTile.x,
+              sourceY: selectedTile.y,
+              tilesheet: selectedTile.texture.key,
+              layer: depth,
+            };
+            const placedTiles = this.registry.get("placedTiles") || [];
+            placedTiles.push(tileData);
+            this.registry.set("placedTiles", placedTiles);
+          }
+          container.add(tile);
+        }
+      }
     }
   }
 }

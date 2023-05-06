@@ -6,7 +6,7 @@ export default class Tilesheet extends Phaser.GameObjects.Image {
   private sidebarWidth: number;
   private sidebarHeight: number;
   private tileSize: number;
-  private thisHighlightClick!: Phaser.GameObjects.Rectangle;
+  public thisHighlightClick!: Phaser.GameObjects.Rectangle;
   private thisHighlightHover!: Phaser.GameObjects.Rectangle;
   private selectedTilePosition?: Phaser.Geom.Point;
 
@@ -108,21 +108,42 @@ export default class Tilesheet extends Phaser.GameObjects.Image {
     }
   }
 
-  getSelectedTile(): {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    texture: { key: string };
-  } | null {
+  getSelectedTiles():
+    | {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+        texture: { key: string };
+      }[]
+    | null {
     if (!this.thisHighlightClick) return null;
 
-    return {
-      x: this.thisHighlightClick.x,
-      y: this.thisHighlightClick.y,
-      width: this.thisHighlightClick.width,
-      height: this.thisHighlightClick.height,
-      texture: this.texture,
-    };
+    const tiles: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      texture: { key: string };
+    }[] = [];
+
+    const startX = this.thisHighlightClick.x;
+    const startY = this.thisHighlightClick.y;
+    const endX = startX + this.thisHighlightClick.width;
+    const endY = startY + this.thisHighlightClick.height;
+
+    for (let y = startY; y < endY; y += this.tileSize) {
+      for (let x = startX; x < endX; x += this.tileSize) {
+        tiles.push({
+          x,
+          y,
+          width: this.tileSize,
+          height: this.tileSize,
+          texture: this.texture,
+        });
+      }
+    }
+
+    return tiles;
   }
 }
