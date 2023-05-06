@@ -12,25 +12,71 @@ export default class GridScene extends Phaser.Scene {
   }
 
   create() {
-    const { width, height } = this.scale;
-    // Draw grid container
-    const gridContainer = this.add.container(0, 0).setDepth(0);
+    this.clearGrid();
+    this.createGridContainer();
+    this.createGrid();
+    this.createLayers();
+    this.initializeHoverTile();
+    this.registerInputListeners();
+    this.listenForLayerUpdates();
+  }
 
+  createGridContainer() {
+    const gridContainer = this.add.container(0, 0).setDepth(0);
     this.layers.push(gridContainer);
-    // Draw grid
+  }
+
+  createGrid() {
+    const { width, height } = this.scale;
     const columns = Math.ceil(width / this.gridSize);
     const rows = Math.ceil(height / this.gridSize);
     this.drawGrid(columns, rows);
-    // Draw layers
+  }
+
+  createLayers() {
     const layersData = this.registry.get("layers");
     layersData.forEach((layerData: { id: number; name: string }) => {
-      const layerContainer = this.add.container(0, 0);
-      layerContainer.setDepth(layerData.id);
+      const layerContainer = this.createLayerContainer(
+        layerData.id,
+        layerData.name
+      );
       this.layers.push(layerContainer);
     });
-    // Listen for pointer events
-    this.input.on("pointerdown", this.handleGridClick, this);
-    // Listen for layer updates
+  }
+
+  createLayerContainer(
+    depth: number,
+    name?: string
+  ): Phaser.GameObjects.Container {
+    const layerContainer = this.add.container(0, 0);
+    layerContainer.setDepth(depth);
+    if (name) layerContainer.name = name;
+    return layerContainer;
+  }
+
+  initializeHoverTile() {
+    const hoverContainer = this.createLayerContainer(this.layers.length + 1);
+    this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
+      hoverContainer.removeAll(true);
+      const tile = this.drawTile(pointer, hoverContainer, hoverContainer.depth);
+      if (tile) tile.alpha = 0.5;
+    });
+  }
+
+  registerInputListeners() {
+    this.input.on(
+      "pointerdown",
+      (pointer: Phaser.Input.Pointer) => {
+        const activeLayer = this.registry.get("activeLayer");
+        const container = this.layers[activeLayer];
+        const depth = activeLayer + 1;
+        this.drawTile(pointer, container, depth);
+      },
+      this
+    );
+  }
+
+  listenForLayerUpdates() {
     const eventEmitter = this.registry.get("eventEmitter");
     eventEmitter.on("updateLayers", this.updateLayers, this);
   }
@@ -82,19 +128,16 @@ export default class GridScene extends Phaser.Scene {
   }
 
   clearGrid() {
-    this.children.each((child) => {
-      if (child instanceof Phaser.GameObjects.Rectangle) {
-        child.destroy();
-      }
+    this.layers.forEach((layer: any) => {
+      layer.removeAll(true);
     });
   }
 
-  handleGridClick(pointer: Phaser.Input.Pointer) {
+  drawTile(pointer: Phaser.Input.Pointer, container: any, depth: number) {
     const { x, y } = getCoordinatesFromPointer(pointer, this.gridSize);
 
     const menuScene = this.scene.get("MenuScene") as MenuScene;
     const selectedTile = menuScene.getSelectedTile();
-    const selectedLayerIndex = menuScene.getActiveLayerIndex();
 
     if (selectedTile && selectedTile.texture) {
       const tile = this.add
@@ -110,9 +153,10 @@ export default class GridScene extends Phaser.Scene {
           selectedTile.height
         )
         .setOrigin(0)
-        .setDepth(selectedLayerIndex + 1);
+        .setDepth(depth);
 
-      this.layers[selectedLayerIndex + 1].add(tile);
+      container.add(tile);
+      return tile;
     }
   }
 }

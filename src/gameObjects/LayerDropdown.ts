@@ -129,8 +129,9 @@ export default class LayerDropdown extends Phaser.GameObjects.Container {
     const layers = this.scene.registry.get("layers");
     const activeLayer = this.scene.registry.get("activeLayer");
     const layerToDelete = layers[activeLayer];
+    if (layers.length === 1) return;
     // Delete the layer
-    const updatedLayers = deleteLayer(layers, activeLayer); // You need to import the `deleteLayer` function from "../helpers/layerHelpers"
+    const updatedLayers = deleteLayer(layers, activeLayer);
     this.scene.registry.set("layers", updatedLayers);
     // Emit an event to update the layers in the editor
     const eventEmitter = this.scene.registry.get("eventEmitter");
