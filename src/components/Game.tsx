@@ -4,6 +4,7 @@ import MenuScene from "../scenes/MenuScene";
 import GridScene from "../scenes/GridScene";
 import { useSelector } from "react-redux";
 import AppState from "../store/types";
+import MapScene from "../scenes/MapScene";
 
 interface GameProps {
   backgroundColor: string;
@@ -34,6 +35,7 @@ const Game: React.FC<GameProps> = ({ backgroundColor }) => {
     gameInstance.current.scene.scenes.forEach((scene) => {
       if (scene instanceof GridScene) scene.resize();
       if (scene instanceof MenuScene) scene.resize();
+      if (scene instanceof MapScene) scene.resize();
     });
   };
 
@@ -46,7 +48,7 @@ const Game: React.FC<GameProps> = ({ backgroundColor }) => {
       height: window.innerHeight,
       backgroundColor,
       parent: gameRef.current,
-      scene: [GridScene, MenuScene],
+      scene: [GridScene, MapScene, MenuScene],
       render: {
         pixelArt: true, // Add this line
       },
@@ -70,6 +72,7 @@ const Game: React.FC<GameProps> = ({ backgroundColor }) => {
     };
 
     gameInstance.current = new Phaser.Game(config);
+    gameInstance.current.scene.start("MapScene");
     gameInstance.current.scene.start("MenuScene");
 
     window.addEventListener("resize", resizeGame);
