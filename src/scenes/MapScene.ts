@@ -98,7 +98,6 @@ export default class MapScene extends Phaser.Scene {
   }
 
   resize() {
-    const { width, height } = this.scale;
     // Clear layers
     this.clearLayers();
     // Draw placed tiles
@@ -117,6 +116,8 @@ export default class MapScene extends Phaser.Scene {
       gridY: number;
       sourceX: number;
       sourceY: number;
+      offsetX: number;
+      offsetY: number;
       width: number;
       height: number;
       tilesheet: any;
@@ -124,10 +125,20 @@ export default class MapScene extends Phaser.Scene {
     },
     container: any
   ) {
-    const { gridX, gridY, sourceX, sourceY, width, height, tilesheet, depth } =
-      tile;
+    const {
+      gridX,
+      gridY,
+      offsetX,
+      offsetY,
+      sourceX,
+      sourceY,
+      width,
+      height,
+      tilesheet,
+      depth,
+    } = tile;
     const tileToAdd = this.add
-      .image(gridX, gridY, tilesheet)
+      .image(gridX - offsetX, gridY - offsetY, tilesheet)
       .setCrop(sourceX, sourceY, width, height)
       .setOrigin(0)
       .setDepth(depth);
@@ -144,42 +155,44 @@ export default class MapScene extends Phaser.Scene {
       for (const selectedTile of selectedTiles) {
         if (selectedTile && selectedTile.texture && menuScene.tilesheet) {
           const gridCoords = getCoordinatesFromPointer(pointer, this.gridSize);
-          const x = gridCoords.x - menuScene.tilesheet.thisHighlightClick.x;
-          const y = gridCoords.y - menuScene.tilesheet.thisHighlightClick.y;
-          const tile = this.drawTile(
-            {
-              gridX: x,
-              gridY: y,
-              sourceX: selectedTile.x,
-              sourceY: selectedTile.y,
-              width: selectedTile.width,
-              height: selectedTile.height,
-              tilesheet: selectedTile.texture.key,
-              depth,
-            },
-            container
-          );
+          const x = gridCoords.x;
+          const y = gridCoords.y;
+          const tileData = {
+            gridX: x,
+            gridY: y,
+            offsetX: menuScene.tilesheet.thisHighlightClick.x,
+            offsetY: menuScene.tilesheet.thisHighlightClick.y,
+            sourceX: selectedTile.x,
+            sourceY: selectedTile.y,
+            width: selectedTile.width,
+            height: selectedTile.height,
+            tilesheet: selectedTile.texture.key,
+            depth,
+          };
+          const tile = this.drawTile(tileData, container);
 
           if (pointerEvent === "mousedown") {
+            this.removeExistingTile(x, y, container.name);
             // Add the tile object to an array in the registry
-            const tileData = {
-              gridX: x,
-              gridY: y,
-              sourceX: selectedTile.x,
-              sourceY: selectedTile.y,
-              width: selectedTile.width,
-              height: selectedTile.height,
-              tilesheet: selectedTile.texture.key,
-              layer: container.name,
-              depth,
-            };
             const placedTiles = this.registry.get("placedTiles") || [];
-            placedTiles.push(tileData);
+            placedTiles.push({ ...tileData, layer: container.name });
             this.registry.set("placedTiles", placedTiles);
           } else {
             tile.alpha = 0.5;
           }
         }
+      }
+    }
+  }
+
+  removeExistingTile(x: number, y: number, layer: string) {
+    const placedTiles = this.registry.get("placedTiles") || [];
+    for (let i = 0; i < placedTiles.length; i++) {
+      const tile = placedTiles[i];
+      if (tile.gridX === x && tile.gridY === y && tile.layer === layer) {
+        placedTiles.splice(i, 1);
+        this.registry.set("placedTiles", placedTiles);
+        return;
       }
     }
   }
