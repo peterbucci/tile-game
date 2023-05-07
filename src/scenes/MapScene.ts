@@ -158,6 +158,8 @@ export default class MapScene extends Phaser.Scene {
           const x = gridCoords.x;
           const y = gridCoords.y;
           const tileData = {
+            x: x + selectedTile.x - menuScene.tilesheet.thisHighlightClick.x,
+            y: y + selectedTile.y - menuScene.tilesheet.thisHighlightClick.y,
             gridX: x,
             gridY: y,
             offsetX: menuScene.tilesheet.thisHighlightClick.x,
@@ -172,7 +174,7 @@ export default class MapScene extends Phaser.Scene {
           const tile = this.drawTile(tileData, container);
 
           if (pointerEvent === "mousedown") {
-            this.removeExistingTile(x, y, container.name);
+            this.removeExistingTile(tileData.x, tileData.y, container.name);
             // Add the tile object to an array in the registry
             const placedTiles = this.registry.get("placedTiles") || [];
             placedTiles.push({ ...tileData, layer: container.name });
@@ -189,7 +191,7 @@ export default class MapScene extends Phaser.Scene {
     const placedTiles = this.registry.get("placedTiles") || [];
     for (let i = 0; i < placedTiles.length; i++) {
       const tile = placedTiles[i];
-      if (tile.gridX === x && tile.gridY === y && tile.layer === layer) {
+      if (tile.x === x && tile.y === y && tile.layer === layer) {
         placedTiles.splice(i, 1);
         this.registry.set("placedTiles", placedTiles);
         return;
